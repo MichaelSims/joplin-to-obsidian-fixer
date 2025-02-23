@@ -94,10 +94,6 @@ class UtilsKtTest {
         )
     }
 
-
-    // Set this to a working directory from a previous run
-    private val testDir = File("/tmp/sims.michael.joplin2obsidian.MainCommand11316666218871478507/input/")
-
     @Test
     fun `find notes with blank extensions`() {
         logMatchingNotes { result ->
@@ -106,7 +102,7 @@ class UtilsKtTest {
     }
 
     private fun logMatchingNotes(predicate: (NoteProcessingResult) -> Boolean) {
-        val numResults = testDir
+        val numResults = TestConfig.workingDirOverrideFile
             .walk()
             .filter { file -> file.extension == "md" }
             .map { file -> Note(file) }
@@ -121,7 +117,7 @@ class UtilsKtTest {
 
 
     private fun getTestNote(name: String): File {
-        val note = testDir.walk().filter { file -> file.name == name }.single()
+        val note = TestConfig.workingDirOverrideFile.walk().filter { file -> file.name == name }.single()
         logger.info("Note is {}", note.toStringWithClickableURI())
         return note
     }

@@ -5,7 +5,15 @@ import org.junit.jupiter.api.Test
 
 class MainCommandTest {
     @Test
-    fun name() {
-        MainCommand().main(arrayOf("/mnt/c/Users/micha/Downloads/joplin-md-export", "--working-dir-override", "/tmp/sims.michael.joplin2obsidian.MainCommand11316666218871478507", "--dry-run"))
+    fun `main with dry run completes successfully`() {
+        val args = with(TestConfig) {
+            arrayOf(
+                inputPath,
+                "--working-dir-override",
+                workingDirOverride,
+                "--dry-run"
+            )
+        }
+        MainCommand().main(args)
     }
 }

@@ -37,3 +37,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+/src/test/resources/test-config.properties
