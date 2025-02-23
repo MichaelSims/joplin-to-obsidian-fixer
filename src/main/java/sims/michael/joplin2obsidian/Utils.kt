@@ -7,3 +7,7 @@ import java.io.File
  * clickable when it appears in the test output window.
  */
 fun File.toStringWithClickableURI(): String = "$this (${toURI().toString().replaceFirst("/", "///")})"
+
+fun copyAndRewriteNotes(workingDir: File, inputCopy: File, outputDir: File): List<Rename> {
+    TODO("Not yet implemented")
+}

@@ -32,6 +32,13 @@ class MainCommand : CliktCommand() {
 
         val outputDir = Files.createTempDirectory(workingDir.toPath(), "output").toFile()
         logger.info("Output will be written to {}", outputDir.toStringWithClickableURI())
+
+        // Step 1:
+        // Transform a list of markdown notes (via walking the inputCopy) to a list of Renames that we need to perform
+        // in Step 2. As a side effect, copy each note to an outputDir and correct the MD links during the copy
+        val renames = copyAndRewriteNotes(workingDir, inputCopy, outputDir)
+
+        // Step 2: Copy attachments, performing renames while doing so
     }
 }
 
