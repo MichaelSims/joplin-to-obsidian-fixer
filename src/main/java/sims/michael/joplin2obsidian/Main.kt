@@ -38,6 +38,10 @@ class MainCommand : CliktCommand() {
         // in Step 2. As a side effect, copy each note to an outputDir and correct the MD links during the copy
         val renames = copyAndRewriteNotes(workingDir, inputCopy, outputDir)
 
+        for (rename in renames) {
+            logger.debug("I would rename {} to {}", rename.old, rename.new)
+        }
+
         // Step 2: Copy attachments, performing renames while doing so
     }
 }
