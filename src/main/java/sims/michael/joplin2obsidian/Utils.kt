@@ -32,43 +32,43 @@ fun copyAndRewriteNotes(workingDir: File, input: File, outputDir: File, dryRun: 
 
     }
 
-    return noteProcessingResults.flatMap(NoteProcessingResult::renames)
+    return noteProcessingResults.flatMap(NoteProcessingResult::renames) // TODO make sure the names are unique!
 }
 
 fun Note.getNewNoteContentAndRenameList(): NoteProcessingResult {
     val note = file
-
-    data class LineProcessingResult(val newContent: String, val renames: List<Rename>)
-
     val lineResults = note
         .readLines()
         .mapIndexed { index, line ->
             val lineNum = index + 1
-            val originalLinks =
-                line
-                    .extractMarkdownLinks()
-                    .onEach { link -> logger.debug("Extracted link {}", link) }
-                    .filter { link -> link.target.startsWith("../_resources/") }
-
-            val attachments = originalLinks
-                .map { link -> URLDecoder.decode(link.target, Charsets.UTF_8) }
-                .map { urlDecodedTarget -> note.parentFile.resolve(urlDecodedTarget) }
-                .onEach { attachment ->
-                    check(attachment.exists()) {
-                        "Can't find $attachment referenced by ${note.toStringWithClickableURI()}:$lineNum"
-                    }
-                }
-
-            // What to do with the original links?
-
-
-            LineProcessingResult(line, emptyList())
+            line.processLine(note, lineNum)
         }
 
     return NoteProcessingResult(
         lineResults.map(LineProcessingResult::newContent),
-        lineResults.flatMap(LineProcessingResult::renames)
+        lineResults.flatMap(LineProcessingResult::renames),
+        lineResults.flatMap(LineProcessingResult::originalAttachmentLinks),
     )
+}
+
+fun String.processLine(note: File, lineNum: Int): LineProcessingResult {
+    val originalLinks =
+        extractMarkdownLinks()
+            .onEach { link -> logger.debug("Extracted link {}", link) }
+            .filter { link -> link.target.startsWith("../_resources/") }
+            .map { link ->
+                val urlDecodedTarget = URLDecoder.decode(link.target, Charsets.UTF_8)
+                val attachment = note.parentFile.resolve(urlDecodedTarget)
+                check(attachment.exists()) {
+                    "Can't find $attachment referenced by ${note.toStringWithClickableURI()}:$lineNum"
+                }
+                link
+            }
+
+    // What to do with the original links?
+    // If the original target has no extension, rename the file to be the title
+
+    return LineProcessingResult(this, renames = emptyList(), originalAttachmentLinks = originalLinks)
 }
 
 fun String.extractMarkdownLinks(): List<MarkdownLink> {
