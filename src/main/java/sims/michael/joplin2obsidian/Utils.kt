@@ -1,5 +1,10 @@
 package sims.michael.joplin2obsidian
 
+import org.commonmark.node.AbstractVisitor
+import org.commonmark.node.Link
+import org.commonmark.node.Node
+import org.commonmark.node.Text
+import org.commonmark.parser.Parser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import sims.michael.joplin2obsidian.Utils.logger
@@ -10,32 +15,41 @@ import java.net.URLDecoder
  * Replace file:/some/path with file:///some/path. Both are legal formats but IDEA will make the second format
  * clickable when it appears in the test output window.
  */
-fun File.toStringWithClickableURI(): String = "$this (${toURI().toString().replaceFirst("/", "///")})"
+fun File.toStringWithClickableURI(): String =
+    "$this (${toURI().toString().replaceFirst("/", "///").replace("(", "%28").replace(")", "%29")})"
 
-fun copyAndRewriteNotes(workingDir: File, input: File, outputDir: File): List<Rename> {
+fun copyAndRewriteNotes(workingDir: File, input: File, outputDir: File, dryRun: Boolean): List<Rename> {
 
     val notes = input.walk().filter { file -> file.extension == "md" }.map(::Note)
 
     val noteProcessingResults = notes
-        .onEach { note -> logger.debug("Processing {}", note) }
+        .onEach { note -> logger.debug("Processing {}", note.file.toStringWithClickableURI()) }
         .map(Note::getNewNoteContentAndRenameList)
         .toList()
 
-    // TODO: copy notes to output while rewriting
+    // TODO: copy notes to output while rewriting`
+    if (!dryRun) {
+
+    }
 
     return noteProcessingResults.flatMap(NoteProcessingResult::renames)
 }
 
 fun Note.getNewNoteContentAndRenameList(): NoteProcessingResult {
     val note = file
+
     data class LineProcessingResult(val newContent: String, val renames: List<Rename>)
+
     val lineResults = note
         .readLines()
         .mapIndexed { index, line ->
             val lineNum = index + 1
-            val originalLinks = line
-                .extractMarkdownLinks()
-                .filter { link -> link.target.startsWith("../_resources/") }
+            val originalLinks =
+                line
+                    .extractMarkdownLinks()
+                    .onEach { link -> logger.debug("Extracted link {}", link) }
+                    .filter { link -> link.target.startsWith("../_resources/") }
+
             val attachments = originalLinks
                 .map { link -> URLDecoder.decode(link.target, Charsets.UTF_8) }
                 .map { urlDecodedTarget -> note.parentFile.resolve(urlDecodedTarget) }
@@ -44,6 +58,10 @@ fun Note.getNewNoteContentAndRenameList(): NoteProcessingResult {
                         "Can't find $attachment referenced by ${note.toStringWithClickableURI()}:$lineNum"
                     }
                 }
+
+            // What to do with the original links?
+
+
             LineProcessingResult(line, emptyList())
         }
 
@@ -53,15 +71,35 @@ fun Note.getNewNoteContentAndRenameList(): NoteProcessingResult {
     )
 }
 
-fun String.extractMarkdownLinks() = attachmentLinkRegex
-    .findAll(this)
-    .map { result ->
-        val (name, target) = result.destructured
-        MarkdownLink(name, target)
-    }
-    .toList()
+fun String.extractMarkdownLinks(): List<MarkdownLink> {
+    val parser = Parser.builder().build()
+    val node = parser.parse(this)
+    return node
+        .collectLinks()
+        .map { link ->
+            MarkdownLink(
+                name = link.collectTextValues().toSet().joinToString(" "),
+                target = link.destination.orEmpty()
+            )
+        }
+}
 
-private val attachmentLinkRegex = "\\[(.+?)]\\((.+?)\\)".toRegex()
+private fun Node.collectLinks(): List<Link> = buildList {
+    accept(object : AbstractVisitor() {
+        override fun visit(link: Link) {
+            add(link)
+        }
+    })
+}
+
+private fun Node.collectTextValues(): List<String> = buildList {
+    accept(object : AbstractVisitor() {
+        override fun visit(text: Text) {
+            val value = text.literal.replace("\u200B", "")
+            add(value)
+        }
+    })
+}
 
 private object Utils {
     val logger: Logger = LoggerFactory.getLogger(Utils::class.java)

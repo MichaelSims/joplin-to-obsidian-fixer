@@ -3,6 +3,7 @@ package sims.michael.joplin2obsidian
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.validate
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.file
@@ -13,6 +14,7 @@ class MainCommand : CliktCommand() {
     private val logger = LoggerFactory.getLogger(MainCommand::class.java)
     private val inputPath by argument().file(mustExist = true).validate { path -> path.isDirectory }
     private val workingDirOverride by option().file(mustExist = true).validate { path -> path.isDirectory }
+    private val dryRun by option().flag("--disable-dry-run")
 
     override fun run() {
         logger.info("Using input path {}", inputPath)
@@ -24,7 +26,7 @@ class MainCommand : CliktCommand() {
         logger.info("Using {} as working directory", workingDir)
 
         val inputCopy = workingDir.resolve("input")
-        if (!inputCopy.exists()) {
+        if (!inputCopy.exists() && !dryRun) {
             logger.info("Copying input into working directory (this might take a while...)")
             inputPath.copyRecursively(inputCopy)
             logger.info("Done copying input")
@@ -36,7 +38,7 @@ class MainCommand : CliktCommand() {
         // Step 1:
         // Transform a list of markdown notes (via walking the inputCopy) to a list of Renames that we need to perform
         // in Step 2. As a side effect, copy each note to an outputDir and correct the MD links during the copy
-        val renames = copyAndRewriteNotes(workingDir, inputCopy, outputDir)
+        val renames = copyAndRewriteNotes(workingDir, inputCopy, outputDir, dryRun)
 
         for (rename in renames) {
             logger.debug("I would rename {} to {}", rename.old, rename.new)

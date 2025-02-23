@@ -27,7 +27,6 @@ class UtilsKtTest {
 
         assertEquals(
             listOf(
-                MarkdownLink("Joseph Sch", "../_resources/5360c6092d2a32ee47346b1c71182339"),
                 MarkdownLink("facebook.com/arcbotics", "http://facebook.com/arcbotics"),
                 MarkdownLink("youtube.com/arcbotics", "http://youtube.com/arcbotics"),
                 MarkdownLink("instagram.com/arcbotics", "http://instagram.com/arcbotics"),
