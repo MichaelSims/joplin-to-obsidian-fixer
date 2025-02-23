@@ -14,6 +14,7 @@ dependencies {
     implementation("com.github.ajalt.clikt:clikt:4.1.0")
     implementation("org.slf4j:slf4j-api:2.0.5")
     implementation("ch.qos.logback:logback-classic:1.4.12")
+    implementation("org.commonmark:commonmark:0.24.0")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation(kotlin("stdlib-jdk8"))
