@@ -1,5 +1,7 @@
 package sims.michael.joplin2obsidian
 
+import org.commonmark.node.Link
+import org.commonmark.node.Text
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -18,24 +20,26 @@ class UtilsKtTest {
         )
     }
 
+    fun createLink(name: String, destination: String) = Link(name, null).apply{ appendChild(Text(destination)) }
+
     @Test
     fun `extract markdown links`() {
         assertEquals(
-            listOf(MarkdownLink("name", "target")),
+            listOf(createLink("name", "target")),
             "[name](target)".extractMarkdownLinks(),
         )
 
         assertEquals(
-            listOf(MarkdownLink("one", "one"), MarkdownLink("two", "two")),
+            listOf(createLink("one", "one"), createLink("two", "two")),
             "This has both [one](one) and [two](two) links.".extractMarkdownLinks()
         )
 
         assertEquals(
             listOf(
-                MarkdownLink("facebook.com/arcbotics", "http://facebook.com/arcbotics"),
-                MarkdownLink("youtube.com/arcbotics", "http://youtube.com/arcbotics"),
-                MarkdownLink("instagram.com/arcbotics", "http://instagram.com/arcbotics"),
-                MarkdownLink("twitter.com/arcbotics", "http://twitter.com/arcbotics"),
+                createLink("facebook.com/arcbotics", "http://facebook.com/arcbotics"),
+                createLink("youtube.com/arcbotics", "http://youtube.com/arcbotics"),
+                createLink("instagram.com/arcbotics", "http://instagram.com/arcbotics"),
+                createLink("twitter.com/arcbotics", "http://twitter.com/arcbotics"),
             ),
             ("|  ![Joseph Sch](../_resources/5360c6092d2a32ee47346b1c71182339) |  **Joseph Schlesinger**  " +
                     "(ArcBotics)<br>Dec 29, 6:29 AM PST<br>Hi Michael,<br>It has to do with the SPI bus being used " +
@@ -69,7 +73,7 @@ class UtilsKtTest {
         val note = getTestNote("Whirlpool Refrigerator Model _GSF26C4EXY03 manual.md")
         val result = Note(note).getNewNoteContentAndRenameList().originalAttachmentLinks
         assertEquals(
-            listOf(MarkdownLink("L1004475.pdf", "../_resources/L1004475.pdf")),
+            listOf(createLink("L1004475.pdf", "../_resources/L1004475.pdf")),
             result
         )
     }
@@ -97,7 +101,7 @@ class UtilsKtTest {
     @Test
     fun `find notes with blank extensions`() {
         logMatchingNotes { result ->
-            result.originalAttachmentLinks.any { (_, target) -> File(target).extension.isBlank() }
+            result.originalAttachmentLinks.any { link -> File(link.destination).extension.isBlank() }
         }
     }
 

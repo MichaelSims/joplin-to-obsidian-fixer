@@ -55,9 +55,9 @@ fun String.processLine(note: File, lineNum: Int): LineProcessingResult {
     val originalLinks =
         extractMarkdownLinks()
             .onEach { link -> logger.debug("Extracted link {}", link) }
-            .filter { link -> link.target.startsWith("../_resources/") }
+            .filter { link -> link.destination.startsWith("../_resources/") }
             .map { link ->
-                val urlDecodedTarget = URLDecoder.decode(link.target, Charsets.UTF_8)
+                val urlDecodedTarget = URLDecoder.decode(link.destination, Charsets.UTF_8)
                 val attachment = note.parentFile.resolve(urlDecodedTarget)
                 check(attachment.exists()) {
                     "Can't find $attachment referenced by ${note.toStringWithClickableURI()}:$lineNum"
@@ -71,18 +71,7 @@ fun String.processLine(note: File, lineNum: Int): LineProcessingResult {
     return LineProcessingResult(this, renames = emptyList(), originalAttachmentLinks = originalLinks)
 }
 
-fun String.extractMarkdownLinks(): List<MarkdownLink> {
-    val parser = Parser.builder().build()
-    val node = parser.parse(this)
-    return node
-        .collectLinks()
-        .map { link ->
-            MarkdownLink(
-                name = link.collectTextValues().toSet().joinToString(" "),
-                target = link.destination.orEmpty()
-            )
-        }
-}
+fun String.extractMarkdownLinks(): List<Link> = Parser.builder().build().parse(this).collectLinks()
 
 private fun Node.collectLinks(): List<Link> = buildList {
     accept(object : AbstractVisitor() {
